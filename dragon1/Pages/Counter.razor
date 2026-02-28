@@ -1,0 +1,91 @@
+﻿
+@page "/counter"
+@using dragon1.ApiRequests
+@using dragon1.ApiRequests.Models
+@using dragon1.ApiRequests.Services
+@inject UserService UserService
+@inject NavigationManager NavManager
+
+<PageTitle>Counter</PageTitle>
+
+<h3>Список</h3>
+
+<p class="text-center mb-5 ">
+<table class="table table-bordered">
+    <thead class="alert-dark">
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Удалить</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (users==null)
+        {
+            <tr>
+                <td colspan="3" class="text-center">Loading...</td>
+            </tr>
+        }
+        else if (!users.Any())
+        {
+            <tr>
+                <td colspan="3" class="text-center">No users found</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.idUser</td>
+                    <td>@user.name</td>
+                    <td>@user.description</td>
+                     <td><button @onclick="() => deleteUser(user.idUser)" class="btn btn-outline-dark p-0">Удалить</button></td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+</p>
+
+
+
+
+@code {
+
+    [Inject] private ApiRequest _apiRequest { get; set; }
+    private List<UserDataShort> users = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserService.CurrentUser == null || UserService.CurrentUser.roleId != 1)
+        {
+            NavManager.NavigateTo("/auth", forceLoad: true);
+        }
+        else await getAllUsers();
+    }
+
+    private async Task getAllUsers()
+    {
+        var userData = await _apiRequest.GetAllUsers();
+        users = userData?.data?.users ?? new List<UserDataShort>();
+
+        StateHasChanged();
+    }
+
+    private async Task deleteUser(int idUser)
+    {
+        var result = await _apiRequest.DeleteUser(idUser);
+        if (result.status)
+        {
+            await getAllUsers();
+        }
+        
+        StateHasChanged();
+    }
+
+
+}
+
+

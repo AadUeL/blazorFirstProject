@@ -1,0 +1,153 @@
+﻿@page "/auth"
+@using dragon1.ApiRequests
+@using dragon1.ApiRequests.Models
+@using dragon1.ApiRequests.Services
+@inject UserService UserService
+
+<PageTitle>Authorization</PageTitle>
+
+@if(_isRegPage)
+{
+	<h3>Регистрация</h3>
+	<hr />
+	<div class="d-flex align-items-center p-4">
+		<form style="width: 23rem;">
+			<div class="form-outline mb-4">
+				<label class="form-label">Name</label>
+				<input type="text" @bind="@reqDataUser.Name" class="form-control form-control-lg" />
+			</div>
+			<div class="form-outline mb-4">
+				<label class="form-label">Description</label>
+				<input type="text" @bind="@reqDataUser.Description" class="form-control form-control-lg" />
+			</div>
+			<div class="form-outline mb-4">
+				<label class="form-label">Login</label>
+				<input type="text" @bind="@reqDataUser.LoginName" class="form-control form-control-lg" />
+			</div>
+			<div class="form-outline mb-4">
+				<label class="form-label">Password</label>
+				<input type="password" @bind="@reqDataUser.Password" class="form-control form-control-lg" />
+			</div>
+			<div class="pt-1 mb-4">
+				<button class="btn btn-primary w-100" @onclick="AddNewUser" type="button">Сохранить</button>
+			</div>
+			<button @onclick="ChangePageOnReg" class="btn btn-outline-dark mt-3">Назад</button>
+
+		</form>
+	</div>	
+}
+
+
+
+@if (!_isRegPage)
+{
+	@if (UserService.CurrentUser == null)
+	{
+		<h3>Авторизация</h3>
+		<hr />
+		<div class="d-flex align-items-center">
+			<form style="width:23rem;">
+				<div class="md-4 ">
+					<label class="form-label">Login</label>
+					<input type="text" @bind="@_reqAuthUser.LoginName" class="form-control form-control-lg" />
+				</div>
+				<div class="mb-4">
+					<label class="form-label">Password</label>
+					<input type="password" @bind="@_reqAuthUser.Password" class="form-control form-control-lg" />
+				</div>
+				<button type="button" @onclick="AuthLogin" class="btn btn-primary mb-4 w-100">Войти</button>
+				<div class="d-flex align-items-center mt-6">
+					<label class="me-2">Нет аккаунта?</label>
+					<button type="button" @onclick="ChangePageOnReg" class="btn btn-link p-0">Зарегестрироваться</button>
+				</div>
+			</form>
+		</div>
+	}
+	else
+	{
+		<h3>Профиль</h3>
+		<div style="width:23rem;">
+			<hr />
+			<p><strong>ФИО:</strong> @UserService.CurrentUser.name</p>
+			<p><strong>ID:</strong> @UserService.CurrentUser.idUser</p>
+			<p><strong>О себе:</strong> @UserService.CurrentUser.description</p>
+			@if (UserService.CurrentUser.roleId == 2)
+			{
+				<p><strong>Роль: </strong>Обычный пользователь</p>
+			}
+			else
+			{
+				<p><strong>Роль: </strong>Администратор</p>
+			}
+			<button @onclick="Logout" class="btn btn-outline-dark mt-3">Выйти</button>
+		</div>
+	}
+	
+}
+
+
+
+
+@code {
+	private bool _isRegPage = false;
+
+	//авторизация
+
+	[Inject] private ApiRequest _apiRequest { get; set; }
+
+	private ReqAuthUser _reqAuthUser = new ReqAuthUser();
+
+
+	private async Task AuthLogin()
+	{
+		var reqAuthUserdata = await _apiRequest.GetUserFromApi(_reqAuthUser);
+
+		UserService.SetCurrentUser(reqAuthUserdata);
+
+		StateHasChanged();
+	}
+
+	private void Logout()
+	{
+		UserService.Logout();
+		StateHasChanged();
+	}
+
+	//смена страницы
+	private void ChangePageOnReg()
+	{
+		_isRegPage = !_isRegPage;
+		StateHasChanged();
+	}
+
+
+	//регестрация
+	private ReqDataUser reqDataUser = new ReqDataUser();
+
+	private async Task AddNewUser()
+	{
+		var reqAddUserData = await _apiRequest.AddNewUser(reqDataUser);
+
+		if (!reqAddUserData.status) return;
+
+		if (reqAddUserData.status)
+		{
+			reqDataUser = new ReqDataUser();
+			_isRegPage = false;
+		}
+		StateHasChanged();
+
+	}
+
+
+}
+
+
+
+
+
+
+
+
+
+
