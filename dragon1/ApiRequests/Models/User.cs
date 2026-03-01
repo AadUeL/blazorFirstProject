@@ -30,7 +30,7 @@
         public string Password { get; set; }
     }
 
-    public class UserAddData
+    public class StatusData
     {
         public bool status { get; set; }
     }
@@ -47,6 +47,13 @@
     {
         public bool status { get; set; }
         public UserDataShort user { get; set; }
+    }
+
+    //Update
+    public class ReqUpdateUser
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
     }
 
 

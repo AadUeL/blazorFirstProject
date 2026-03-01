@@ -31,7 +31,7 @@ namespace dragon1.ApiRequests
         }
 
 
-        public async Task<UserAddData> AddNewUser(ReqDataUser user)
+        public async Task<StatusData> AddNewUser(ReqDataUser user)
         {
             var url = "/CreateNewUserAndLogin";
 
@@ -39,9 +39,9 @@ namespace dragon1.ApiRequests
 
             var responseContent = await response.Content.ReadAsStringAsync();
 
-            var userAddData = JsonSerializer.Deserialize<UserAddData>(responseContent);
+            var userAddData = JsonSerializer.Deserialize<StatusData>(responseContent);
 
-            return userAddData ?? new UserAddData();
+            return userAddData ?? new StatusData();
 
         }
 
@@ -61,7 +61,7 @@ namespace dragon1.ApiRequests
             return authUserData ?? new AuthUserData();
         }
 
-        public async Task<UserAddData> DeleteUser(int idUser)
+        public async Task<StatusData> DeleteUser(int idUser)
         {
             var url = $"/DeleteUser/{idUser}";
 
@@ -69,14 +69,30 @@ namespace dragon1.ApiRequests
 
             var responseContent = await response.Content.ReadAsStringAsync();
 
-            var result = JsonSerializer.Deserialize<UserAddData>(responseContent, new JsonSerializerOptions
+            var result = JsonSerializer.Deserialize<StatusData>(responseContent, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
 
-            return result ?? new UserAddData();
+            return result ?? new StatusData();
 
 
+        }
+
+        public async Task<StatusData> UpdateUser(int id, ReqUpdateUser reqUser)
+        {
+            var url = $"/UpdateUser/{id}";
+
+            var response = await _httpClient.PutAsJsonAsync(url, reqUser);
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            var result = JsonSerializer.Deserialize<StatusData>(responseContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            return result ?? new StatusData();
         }
 
     }

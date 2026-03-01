@@ -4,150 +4,146 @@
 @using dragon1.ApiRequests.Services
 @inject UserService UserService
 
-<PageTitle>Authorization</PageTitle>
+<PageTitle>Авторизация</PageTitle>
 
-@if(_isRegPage)
+@if (UserService.CurrentUser == null)
 {
-	<h3>Регистрация</h3>
-	<hr />
-	<div class="d-flex align-items-center p-4">
-		<form style="width: 23rem;">
-			<div class="form-outline mb-4">
-				<label class="form-label">Name</label>
-				<input type="text" @bind="@reqDataUser.Name" class="form-control form-control-lg" />
-			</div>
-			<div class="form-outline mb-4">
-				<label class="form-label">Description</label>
-				<input type="text" @bind="@reqDataUser.Description" class="form-control form-control-lg" />
-			</div>
-			<div class="form-outline mb-4">
-				<label class="form-label">Login</label>
-				<input type="text" @bind="@reqDataUser.LoginName" class="form-control form-control-lg" />
-			</div>
-			<div class="form-outline mb-4">
-				<label class="form-label">Password</label>
-				<input type="password" @bind="@reqDataUser.Password" class="form-control form-control-lg" />
-			</div>
-			<div class="pt-1 mb-4">
-				<button class="btn btn-primary w-100" @onclick="AddNewUser" type="button">Сохранить</button>
-			</div>
-			<button @onclick="ChangePageOnReg" class="btn btn-outline-dark mt-3">Назад</button>
+    <h3>Вход в систему</h3>
+    <hr />
+    <div class="d-flex align-items-center">
+        <form style="width:23rem;">
+            <div class="mb-4">
+                <label class="form-label">Login</label>
+                <input type="text" @bind="_reqAuthUser.LoginName" class="form-control form-control-lg" />
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Password</label>
+                <input type="password" @bind="_reqAuthUser.Password" class="form-control form-control-lg" />
+            </div>
+            <button type="button" @onclick="AuthLogin" class="btn btn-primary mb-4 w-100">Войти</button>
 
-		</form>
-	</div>	
+            <div class="d-flex align-items-center mt-3">
+                <label class="me-2">Нет аккаунта?</label>
+                <a href="/AddUser" class="btn btn-outline-secondary btn-sm">Зарегистрироваться</a>
+            </div>
+        </form>
+    </div>
 }
-
-
-
-@if (!_isRegPage)
+else
 {
-	@if (UserService.CurrentUser == null)
-	{
-		<h3>Авторизация</h3>
-		<hr />
-		<div class="d-flex align-items-center">
-			<form style="width:23rem;">
-				<div class="md-4 ">
-					<label class="form-label">Login</label>
-					<input type="text" @bind="@_reqAuthUser.LoginName" class="form-control form-control-lg" />
-				</div>
-				<div class="mb-4">
-					<label class="form-label">Password</label>
-					<input type="password" @bind="@_reqAuthUser.Password" class="form-control form-control-lg" />
-				</div>
-				<button type="button" @onclick="AuthLogin" class="btn btn-primary mb-4 w-100">Войти</button>
-				<div class="d-flex align-items-center mt-6">
-					<label class="me-2">Нет аккаунта?</label>
-					<button type="button" @onclick="ChangePageOnReg" class="btn btn-link p-0">Зарегестрироваться</button>
-				</div>
-			</form>
-		</div>
-	}
-	else
-	{
-		<h3>Профиль</h3>
-		<div style="width:23rem;">
-			<hr />
-			<p><strong>ФИО:</strong> @UserService.CurrentUser.name</p>
-			<p><strong>ID:</strong> @UserService.CurrentUser.idUser</p>
-			<p><strong>О себе:</strong> @UserService.CurrentUser.description</p>
-			@if (UserService.CurrentUser.roleId == 2)
-			{
-				<p><strong>Роль: </strong>Обычный пользователь</p>
-			}
-			else
-			{
-				<p><strong>Роль: </strong>Администратор</p>
-			}
-			<button @onclick="Logout" class="btn btn-outline-dark mt-3">Выйти</button>
-		</div>
-	}
-	
+    <h3>Мой профиль</h3>
+    <hr />
+
+    <div style="width:23rem;">
+
+        @if (isEditing)
+        {
+            <div class="mb-3">
+                <label class="form-label">ФИО</label>
+                <input type="text" @bind="editName" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">О себе</label>
+                <input type="text" @bind="editDesc" class="form-control" />
+            </div>
+
+            <div class="d-grid gap-2">
+                <button @onclick="SaveProfile" class="btn btn-success">Сохранить</button>
+                <button @onclick="CancelEdit" class="btn btn-outline-secondary">Отмена</button>
+            </div>
+        }
+        else
+        {
+            <p><strong>ID:</strong> @UserService.CurrentUser.idUser</p>
+            <p><strong>ФИО:</strong> @UserService.CurrentUser.name</p>
+            <p><strong>О себе:</strong> @UserService.CurrentUser.description</p>
+
+
+            @if (UserService.CurrentUser.roleId == 2)
+            {
+                <p><strong>Роль: </strong>Обычный пользователь</p>
+            }
+            else
+            {
+                <p><strong>Роль: </strong>Администратор</p>
+            }
+
+
+            <div class="d-grid gap-2">
+                <button @onclick="StartEdit" class="btn btn-primary">Редактировать профиль</button>
+                <button @onclick="Logout" class="btn btn-outline-secondary">Выйти</button>
+            </div>
+        }
+
+    </div>
 }
-
-
-
 
 @code {
-	private bool _isRegPage = false;
+    [Inject] private ApiRequest _apiRequest { get; set; }
 
-	//авторизация
+    private ReqAuthUser _reqAuthUser = new ReqAuthUser();
 
-	[Inject] private ApiRequest _apiRequest { get; set; }
+    private bool isEditing = false;
+    private string editName = "";
+    private string editDesc = "";
 
-	private ReqAuthUser _reqAuthUser = new ReqAuthUser();
+    private async Task AuthLogin()
+    {
+        var reqAuthUserdata = await _apiRequest.GetUserFromApi(_reqAuthUser);
+
+        if (reqAuthUserdata.status && reqAuthUserdata.user != null)
+        {
+            UserService.SetCurrentUser(reqAuthUserdata);
+            StateHasChanged();
+        }
+    }
+
+    private void Logout()
+    {
+        UserService.Logout();
+        isEditing = false;
+        StateHasChanged();
+    }
+
+    private void StartEdit()
+    {
+        if (UserService.CurrentUser != null)
+        {
+            editName = UserService.CurrentUser.name;
+            editDesc = UserService.CurrentUser.description;
+            isEditing = true;
+            StateHasChanged();
+        }
+    }
+
+    private void CancelEdit()
+    {
+        isEditing = false;
+        StateHasChanged();
+    }
+
+    private async Task SaveProfile()
+    {
+        if (UserService.CurrentUser == null) return;
+
+        var updateData = new ReqUpdateUser
+        {
+            Name = editName,
+            Description = editDesc
+        };
 
 
-	private async Task AuthLogin()
-	{
-		var reqAuthUserdata = await _apiRequest.GetUserFromApi(_reqAuthUser);
+        var result = await _apiRequest.UpdateUser(UserService.CurrentUser.idUser, updateData);
 
-		UserService.SetCurrentUser(reqAuthUserdata);
+        if (result.status)
+        {
+            UserService.CurrentUser.name = editName;
+            UserService.CurrentUser.description = editDesc;
 
-		StateHasChanged();
-	}
+            isEditing = false;
+        }
+        else
 
-	private void Logout()
-	{
-		UserService.Logout();
-		StateHasChanged();
-	}
-
-	//смена страницы
-	private void ChangePageOnReg()
-	{
-		_isRegPage = !_isRegPage;
-		StateHasChanged();
-	}
-
-
-	//регестрация
-	private ReqDataUser reqDataUser = new ReqDataUser();
-
-	private async Task AddNewUser()
-	{
-		var reqAddUserData = await _apiRequest.AddNewUser(reqDataUser);
-
-		if (!reqAddUserData.status) return;
-
-		if (reqAddUserData.status)
-		{
-			reqDataUser = new ReqDataUser();
-			_isRegPage = false;
-		}
-		StateHasChanged();
-
-	}
-
-
+        StateHasChanged();
+    }
 }
-
-
-
-
-
-
-
-
-
-

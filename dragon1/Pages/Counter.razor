@@ -8,47 +8,65 @@
 
 <PageTitle>Counter</PageTitle>
 
-<h3>Список</h3>
 
+<h3>Список</h3>
 <p class="text-center mb-5 ">
-<table class="table table-bordered">
-    <thead class="alert-dark">
-        <tr>
-            <th>Id</th>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Удалить</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (users==null)
-        {
+    <table class="table table-bordered">
+        <thead class="alert-dark">
             <tr>
-                <td colspan="3" class="text-center">Loading...</td>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Удалить</th>
+                <th>Редактировать</th>
             </tr>
-        }
-        else if (!users.Any())
-        {
-            <tr>
-                <td colspan="3" class="text-center">No users found</td>
-            </tr>
-        }
-        else
-        {
-            @foreach (var user in users)
+        </thead>
+        <tbody>
+            @if (users == null)
             {
                 <tr>
-                    <td>@user.idUser</td>
-                    <td>@user.name</td>
-                    <td>@user.description</td>
-                     <td><button @onclick="() => deleteUser(user.idUser)" class="btn btn-outline-dark p-0">Удалить</button></td>
+                    <td colspan="3" class="text-center">Loading...</td>
                 </tr>
             }
-        }
-    </tbody>
-</table>
-</p>
+            else if (!users.Any())
+            {
+                <tr>
+                    <td colspan="3" class="text-center">No users found</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var user in users)
+                {
+                    bool isEditing = (editingUserId == user.idUser);
 
+                    <tr>
+                        <td>@user.idUser</td>
+                        @if (isEditing)
+                            {
+                                <td><input type="text" class="form-control" @bind="editName" /></td>
+                                <td><input type="text" class="form-control" @bind="editDesc" /></td>
+                                <td>
+                                    <button @onclick="() => SaveUpdate(user.idUser)" class="btn btn-success btn-sm">Сохранить</button>
+                                </td>
+                            }
+                            else
+                            {
+                                <td>@user.name</td>
+                                <td>@user.description</td>
+                                <td><button @onclick="() => deleteUser(user.idUser)" class="btn btn-outline-secondary p-0">Удалить</button></td>
+                                <td><button @onclick="() => StartEdit(user)" class="btn btn-outline-secondary p-0">Редактировать</button></td>
+                            }
+                        </tr>
+                    }
+                }
+        </tbody>
+    </table>
+   @if (UserService.CurrentUser != null && UserService.CurrentUser.roleId == 1)
+   {
+       <a href="/AddUser" class="btn btn-primary">Добавить пользователя</a>
+   }
+</p>
 
 
 
@@ -81,11 +99,45 @@
         {
             await getAllUsers();
         }
-        
+
         StateHasChanged();
     }
 
+    // редактирование
 
+    private int? editingUserId;
+    private string editName = "";
+    private string editDesc = "";
+
+
+    private void StartEdit(UserDataShort user)
+    {
+        editingUserId = user.idUser;
+        editName = user.name;
+        editDesc = user.description;
+        StateHasChanged();
+    }
+
+  
+    private async Task SaveUpdate(int idUser)
+    {
+        var updateData = new ReqUpdateUser
+            {
+                Name = editName,
+                Description = editDesc
+            };
+
+        var result = await _apiRequest.UpdateUser(idUser, updateData);
+
+        if (result.status)
+        {
+            await getAllUsers();
+            editingUserId = null;
+
+            StateHasChanged();
+        }
+
+    }
 }
 
 
